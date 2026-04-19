@@ -17,7 +17,7 @@ const VIDEOS = [
   },
   {
     src:      'video2.mp4',
-    name:     'Marina.',
+    name:     'Marina',
     initials: 'MA',
     detail:   'Green Card Petition',
     badge:    '✅ Aprovado',
