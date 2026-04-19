@@ -273,6 +273,7 @@
     </div>
   </div>
 </section>
+
 <!-- ═══════════════════════════════════════
      IDIOMAS
 ═══════════════════════════════════════ -->
@@ -280,27 +281,32 @@
   <div class="languages-inner reveal">
     <p class="lang-title" data-i18n="lang_title">Atendemos você no seu idioma</p>
     <div class="lang-cards">
-      <div class="lang-card">
+
+      <!-- ✅ ALTERAÇÃO: data-lang + role + tabindex adicionados em cada card -->
+      <div class="lang-card" data-lang="pt" role="button" tabindex="0" aria-label="Português">
         <span class="lang-flag">🇧🇷</span>
         <div>
           <div class="lang-name">Português</div>
           <div class="lang-sub" data-i18n="lang_pt_sub">Atendimento nativo</div>
         </div>
       </div>
-      <div class="lang-card">
+
+      <div class="lang-card" data-lang="en" role="button" tabindex="0" aria-label="English">
         <span class="lang-flag">🇺🇸</span>
         <div>
           <div class="lang-name">English</div>
           <div class="lang-sub" data-i18n="lang_en_sub">Native support</div>
         </div>
       </div>
-      <div class="lang-card">
+
+      <div class="lang-card" data-lang="es" role="button" tabindex="0" aria-label="Español">
         <span class="lang-flag">🇪🇸</span>
         <div>
           <div class="lang-name">Español</div>
           <div class="lang-sub" data-i18n="lang_es_sub">Atención nativa</div>
         </div>
       </div>
+
     </div>
   </div>
 </section>
