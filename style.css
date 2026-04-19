@@ -1254,6 +1254,8 @@ footer {
   max-height: 560px;
   display: block;
   object-fit: contain;
+  aspect-ratio: 9 / 16;
+  background: #000;
 }
 
 .vc-counter {
