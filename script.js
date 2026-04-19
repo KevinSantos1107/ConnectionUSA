@@ -9,7 +9,7 @@
 ══════════════════════════════════════════════════════════════ */
 const VIDEOS = [
   {
-    src:      'video1.mp4',       // nome do arquivo na mesma pasta do index.html
+    src:      'video1.mp4',
     name:     'Germán',
     initials: 'GE',
     detail:   'Green Card Petition',
@@ -42,33 +42,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const LANG_NAMES = { pt: 'Português', en: 'English', es: 'Español' };
   const LANG_FLAGS = { pt: '🇧🇷', en: '🇺🇸', es: '🇪🇸' };
 
-  // Detecta o idioma do navegador
   function detectBrowserLang() {
     const browserLang = (navigator.language || navigator.userLanguage || 'pt').toLowerCase();
     if (browserLang.startsWith('pt')) return 'pt';
     if (browserLang.startsWith('es')) return 'es';
     if (browserLang.startsWith('en')) return 'en';
-    return null; // desconhecido → mostra o modal
+    return null;
   }
 
-  // Lê o idioma salvo
   function getSavedLang() {
     return localStorage.getItem('connectionusa_lang');
   }
 
-  // Salva o idioma
   function saveLang(lang) {
     localStorage.setItem('connectionusa_lang', lang);
   }
 
-  // Aplica as traduções ao DOM
   function applyTranslations(lang) {
     const t = TRANSLATIONS[lang];
     if (!t) return;
 
     document.documentElement.lang = lang;
 
-    // Mapeia keys de tradução → seletores CSS
     const map = [
       // NAVBAR
       ['nav_why',       '[data-i18n="nav_why"]'],
@@ -188,7 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
       ['mobile_cta',       '[data-i18n="mobile_cta"]'],
     ];
 
-    // Itens com innerHTML (suportam HTML bold/italic)
     const htmlKeys = new Set([
       'problem_title', 'services_title', 'testimonials_title',
       'cta_title', 'problem_transition', 'footer_copy', 'footer_disclaimer'
@@ -205,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Especiais com innerHTML
     const htmlMap = [
       ['problem_title',    '[data-i18n="problem_title"]'],
       ['services_title',   '[data-i18n="services_title"]'],
@@ -220,6 +213,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Atualiza o switcher de idioma no navbar
     updateLangSwitcher(lang);
+
+    // ✅ NOVO: Atualiza o estado ativo dos lang-cards
+    updateLangCards(lang);
   }
 
   /* ── LANG SWITCHER no navbar ── */
@@ -244,11 +240,9 @@ document.addEventListener('DOMContentLoaded', () => {
       </ul>
     `;
 
-    // Insere antes do hamburger
     const hamburger = document.getElementById('hamburger');
     hamburger.parentNode.insertBefore(switcher, hamburger);
 
-    // Toggle dropdown
     const btn = switcher.querySelector('.lang-switcher-btn');
     const dropdown = switcher.querySelector('.lang-switcher-dropdown');
 
@@ -258,13 +252,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.setAttribute('aria-expanded', isOpen);
     });
 
-    // Fecha ao clicar fora
     document.addEventListener('click', () => {
       dropdown.classList.remove('open');
       btn.setAttribute('aria-expanded', 'false');
     });
 
-    // Seleciona idioma
     switcher.querySelectorAll('.lang-option').forEach(opt => {
       opt.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -283,13 +275,41 @@ document.addEventListener('DOMContentLoaded', () => {
     if (flag) flag.textContent = LANG_FLAGS[lang];
     if (name) name.textContent = LANG_NAMES[lang];
 
-    // Marca a opção ativa
     document.querySelectorAll('.lang-option').forEach(opt => {
       opt.classList.toggle('active', opt.dataset.lang === lang);
     });
   }
 
-  /* ── MODAL de boas-vindas (primeira visita ou idioma não detectado) ── */
+  /* ✅ NOVA FUNÇÃO: Atualiza o estado ativo dos cards de idioma na seção #languages */
+  function updateLangCards(lang) {
+    document.querySelectorAll('.lang-card[data-lang]').forEach(card => {
+      card.classList.toggle('active', card.dataset.lang === lang);
+    });
+  }
+
+  /* ✅ NOVA FUNÇÃO: Inicializa os cliques nos lang-cards */
+  function initLangCards() {
+    document.querySelectorAll('.lang-card[data-lang]').forEach(card => {
+      // Clique com mouse
+      card.addEventListener('click', () => {
+        const lang = card.dataset.lang;
+        saveLang(lang);
+        applyTranslations(lang);
+      });
+
+      // Suporte a teclado (Enter e Espaço) para acessibilidade
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const lang = card.dataset.lang;
+          saveLang(lang);
+          applyTranslations(lang);
+        }
+      });
+    });
+  }
+
+  /* ── MODAL de boas-vindas ── */
   function buildWelcomeModal() {
     const overlay = document.createElement('div');
     overlay.id = 'lang-modal-overlay';
@@ -313,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     document.body.appendChild(overlay);
-    // Força reflow antes de animar
     requestAnimationFrame(() => overlay.classList.add('visible'));
 
     overlay.querySelectorAll('.lang-modal-btn').forEach(btn => {
@@ -331,20 +350,19 @@ document.addEventListener('DOMContentLoaded', () => {
   function initI18n() {
     buildLangSwitcher();
 
+    // ✅ Inicializa os cliques nos cards de idioma
+    initLangCards();
+
     const saved = getSavedLang();
     if (saved && SUPPORTED_LANGS.includes(saved)) {
-      // Retorno: aplica direto
       applyTranslations(saved);
     } else {
-      // Primeira visita: detecta ou mostra modal
       const detected = detectBrowserLang();
       if (detected) {
-        // Idioma reconhecido: aplica automaticamente + mostra aviso suave
         applyTranslations(detected);
         saveLang(detected);
       } else {
-        // Idioma desconhecido: mostra o modal de seleção
-        applyTranslations('pt'); // fallback enquanto modal não fecha
+        applyTranslations('pt');
         buildWelcomeModal();
       }
     }
@@ -366,7 +384,6 @@ function initVideoCarousel() {
   let current = 0;
   const total = VIDEOS.length;
 
-  // Cria os slides
   VIDEOS.forEach((v, i) => {
     const slide = document.createElement('div');
     slide.className = 'vc-slide';
@@ -390,7 +407,6 @@ function initVideoCarousel() {
     track.appendChild(slide);
   });
 
-  // Cria os dots
   VIDEOS.forEach((_, i) => {
     const dot = document.createElement('button');
     dot.className = 'vc-dot' + (i === 0 ? ' active' : '');
@@ -400,7 +416,6 @@ function initVideoCarousel() {
   });
 
   function goTo(index) {
-    // Pausa o vídeo atual antes de trocar
     const videos = track.querySelectorAll('video');
     videos.forEach(v => v.pause());
 
@@ -417,7 +432,6 @@ function initVideoCarousel() {
   prevBtn.addEventListener('click', () => { if (current > 0) goTo(current - 1); });
   nextBtn.addEventListener('click', () => { if (current < total - 1) goTo(current + 1); });
 
-  // Suporte a swipe no mobile
   let touchX = 0;
   viewport.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
   viewport.addEventListener('touchend', e => {
@@ -428,7 +442,6 @@ function initVideoCarousel() {
     }
   });
 
-  // Teclado (← →)
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft'  && current > 0)         goTo(current - 1);
     if (e.key === 'ArrowRight' && current < total - 1) goTo(current + 1);
