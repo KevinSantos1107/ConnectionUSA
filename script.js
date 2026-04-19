@@ -216,6 +216,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ✅ NOVO: Atualiza o estado ativo dos lang-cards
     updateLangCards(lang);
+
+    // ✅ NOVO: Atualiza o estado ativo dos links de idioma do rodapé
+    updateFooterLangLinks(lang);
   }
 
   /* ── LANG SWITCHER no navbar ── */
@@ -287,6 +290,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* ✅ NOVA FUNÇÃO: Atualiza o estado ativo dos links de idioma do rodapé */
+  function updateFooterLangLinks(lang) {
+    document.querySelectorAll('.footer-lang-link[data-lang]').forEach(link => {
+      link.classList.toggle('active', link.dataset.lang === lang);
+    });
+  }
+
   /* ✅ NOVA FUNÇÃO: Inicializa os cliques nos lang-cards */
   function initLangCards() {
     document.querySelectorAll('.lang-card[data-lang]').forEach(card => {
@@ -305,6 +315,18 @@ document.addEventListener('DOMContentLoaded', () => {
           saveLang(lang);
           applyTranslations(lang);
         }
+      });
+    });
+  }
+
+  /* ✅ NOVA FUNÇÃO: Inicializa os cliques nos links de idioma do rodapé */
+  function initFooterLangLinks() {
+    document.querySelectorAll('.footer-lang-link[data-lang]').forEach(link => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        const lang = link.dataset.lang;
+        saveLang(lang);
+        applyTranslations(lang);
       });
     });
   }
@@ -352,6 +374,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ✅ Inicializa os cliques nos cards de idioma
     initLangCards();
+
+    // ✅ Inicializa os cliques nos links de idioma do rodapé
+    initFooterLangLinks();
 
     const saved = getSavedLang();
     if (saved && SUPPORTED_LANGS.includes(saved)) {
