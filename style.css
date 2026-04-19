@@ -915,6 +915,7 @@ section { position: relative; }
   flex-wrap: wrap;
 }
 
+/* ✅ ALTERAÇÃO: cursor pointer explícito + transição de outline para acessibilidade */
 .lang-card {
   background: rgba(250,204,21,0.05);
   border: 1px solid rgba(250,204,21,0.18);
@@ -924,12 +925,32 @@ section { position: relative; }
   align-items: center;
   gap: 14px;
   transition: all 0.3s;
-  cursor: default;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
 }
 .lang-card:hover {
   background: rgba(250,204,21,0.1);
   border-color: rgba(250,204,21,0.38);
   transform: translateY(-2px);
+}
+
+/* ✅ NOVO: estado ativo — borda amarela + fundo amarelo suave + selo de selecionado */
+.lang-card.active {
+  background: rgba(250,204,21,0.12);
+  border-color: var(--yellow);
+  border-width: 2px;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(250,204,21,0.18);
+}
+.lang-card.active .lang-name {
+  color: var(--yellow);
+}
+
+/* ✅ NOVO: foco por teclado (acessibilidade) */
+.lang-card:focus-visible {
+  outline: 2px solid var(--yellow);
+  outline-offset: 3px;
 }
 
 .lang-flag { font-size: 1.9rem; }
@@ -938,6 +959,7 @@ section { position: relative; }
   font-weight: 700;
   font-size: 1rem;
   color: var(--white);
+  transition: color 0.3s;
 }
 .lang-sub {
   font-size: 0.76rem;
