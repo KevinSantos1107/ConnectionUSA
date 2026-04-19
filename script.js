@@ -373,6 +373,11 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ══════════════════════════════════════════════════════════════
    VIDEO CAROUSEL
 ══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   VIDEO CAROUSEL — SUBSTITUIR a função initVideoCarousel()
+   no script.js pelo código abaixo
+══════════════════════════════════════════════════════════════ */
+
 function initVideoCarousel() {
   const track    = document.getElementById('vcTrack');
   const dotsWrap = document.getElementById('vcDots');
@@ -384,15 +389,47 @@ function initVideoCarousel() {
   let current = 0;
   const total = VIDEOS.length;
 
+  /* ── Formata segundos em mm:ss ── */
+  function fmt(s) {
+    if (!s || isNaN(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const ss = Math.floor(s % 60).toString().padStart(2, '0');
+    return `${m}:${ss}`;
+  }
+
+  /* ── Cria cada slide ── */
   VIDEOS.forEach((v, i) => {
     const slide = document.createElement('div');
     slide.className = 'vc-slide';
     slide.innerHTML = `
       <div class="vc-video-card">
-        <div class="vc-video-wrap">
-          <video src="${v.src}" controls playsinline preload="metadata"></video>
+        <div class="vc-video-wrap" id="wrap-${i}">
+
+          <video
+            id="vid-${i}"
+            src="${v.src}"
+            playsinline
+            preload="metadata"
+          ></video>
+
+          <!-- Overlay com botão play/pause -->
+          <div class="vc-play-overlay" id="overlay-${i}">
+            <div class="vc-play-btn" id="playbtn-${i}">
+              <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+            </div>
+          </div>
+
+          <!-- Barra de progresso customizada -->
+          <div class="vc-progress-bar">
+            <div class="vc-progress-track" id="track-${i}">
+              <div class="vc-progress-fill" id="fill-${i}"></div>
+            </div>
+            <span class="vc-time" id="time-${i}">0:00 / 0:00</span>
+          </div>
+
           <div class="vc-counter">${i + 1} / ${total}</div>
         </div>
+
         <div class="vc-info">
           <div class="vc-person">
             <div class="vc-avatar">${v.initials}</div>
@@ -405,8 +442,85 @@ function initVideoCarousel() {
         </div>
       </div>`;
     track.appendChild(slide);
+
+    /* ── Referências dos elementos deste slide ── */
+    const vid     = () => document.getElementById(`vid-${i}`);
+    const overlay = () => document.getElementById(`overlay-${i}`);
+    const wrap    = () => document.getElementById(`wrap-${i}`);
+    const fill    = () => document.getElementById(`fill-${i}`);
+    const timeEl  = () => document.getElementById(`time-${i}`);
+    const pbar    = () => document.getElementById(`track-${i}`);
+
+    /* ── Ícones SVG ── */
+    const iconPlay  = `<svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>`;
+    const iconPause = `<svg viewBox="0 0 24 24"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>`;
+
+    /* ── Toggle play/pause ao clicar no overlay ── */
+    setTimeout(() => {
+      const el   = vid();
+      const ov   = overlay();
+      const btn  = document.getElementById(`playbtn-${i}`);
+      const wp   = wrap();
+
+/* Clique no overlay toggling play/pause */
+      ov.addEventListener('click', () => {
+        if (el.paused) {
+          el.play();
+        } else {
+          el.pause();
+        }
+      });
+
+      /* Clique direto no vídeo pausa/retoma */
+      el.addEventListener('click', () => {
+        if (el.paused) {
+          el.play();
+        } else {
+          el.pause();
+        }
+      });
+
+      /* Quando começa a tocar */
+      el.addEventListener('play', () => {
+        btn.innerHTML = iconPause;
+        ov.classList.add('hidden');
+        wp.classList.add('playing');
+      });
+
+      /* Quando pausa */
+      el.addEventListener('pause', () => {
+        btn.innerHTML = iconPlay;
+        ov.classList.remove('hidden');
+        wp.classList.remove('playing');
+      });
+
+      /* Quando termina */
+      el.addEventListener('ended', () => {
+        btn.innerHTML = iconPlay;
+        ov.classList.remove('hidden');
+        wp.classList.remove('playing');
+      });
+
+      /* Atualiza barra de progresso */
+      el.addEventListener('timeupdate', () => {
+        if (!el.duration) return;
+        const pct = (el.currentTime / el.duration) * 100;
+        fill().style.width = pct + '%';
+        timeEl().textContent = `${fmt(el.currentTime)} / ${fmt(el.duration)}`;
+      });
+
+      /* Clique na barra de progresso para seek */
+      pbar().addEventListener('click', (e) => {
+        if (!el.duration) return;
+        const rect = pbar().getBoundingClientRect();
+        const pct  = (e.clientX - rect.left) / rect.width;
+        el.currentTime = pct * el.duration;
+      });
+
+    }, 0);
   });
 
+  /* ── Dots ── */
   VIDEOS.forEach((_, i) => {
     const dot = document.createElement('button');
     dot.className = 'vc-dot' + (i === 0 ? ' active' : '');
@@ -415,9 +529,13 @@ function initVideoCarousel() {
     dotsWrap.appendChild(dot);
   });
 
+  /* ── Navegar entre slides ── */
   function goTo(index) {
-    const videos = track.querySelectorAll('video');
-    videos.forEach(v => v.pause());
+    /* Pausa todos os vídeos */
+    track.querySelectorAll('video').forEach(v => {
+      v.pause();
+      v.currentTime = 0;
+    });
 
     current = index;
     track.style.transform = `translateX(-${current * 100}%)`;
@@ -432,6 +550,7 @@ function initVideoCarousel() {
   prevBtn.addEventListener('click', () => { if (current > 0) goTo(current - 1); });
   nextBtn.addEventListener('click', () => { if (current < total - 1) goTo(current + 1); });
 
+  /* ── Swipe touch ── */
   let touchX = 0;
   viewport.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
   viewport.addEventListener('touchend', e => {
@@ -442,6 +561,7 @@ function initVideoCarousel() {
     }
   });
 
+  /* ── Teclado ── */
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft'  && current > 0)         goTo(current - 1);
     if (e.key === 'ArrowRight' && current < total - 1) goTo(current + 1);
