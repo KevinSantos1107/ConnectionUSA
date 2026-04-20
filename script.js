@@ -1,7 +1,8 @@
 /* ══════════════════════════════════════════════════════════════
    CONNECTION USA — SCRIPTS
    Inclui: scroll reveal · FAQ · navbar · mobile menu ·
-           smooth scroll · sistema de tradução i18n
+           smooth scroll · sistema de tradução i18n ·
+           Google Analytics 4 (G-KJGNRXWTKG)
 ══════════════════════════════════════════════════════════════ */
 
 /* ══════════════════════════════════════════════════════════════
@@ -31,6 +32,16 @@ const VIDEOS = [
   },
   // Para adicionar mais: copie um bloco acima e cole aqui ↑
 ];
+
+/* ══════════════════════════════════════════════════════════════
+   ► HELPER GA4 — envia evento de forma segura
+      (não quebra se o gtag ainda não carregou)
+══════════════════════════════════════════════════════════════ */
+function gaEvent(eventName, params) {
+  if (typeof gtag === 'function') {
+    gtag('event', eventName, params);
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -211,13 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
       els.forEach(el => { el.innerHTML = t[key] || ''; });
     });
 
-    // Atualiza o switcher de idioma no navbar
     updateLangSwitcher(lang);
-
-    // ✅ NOVO: Atualiza o estado ativo dos lang-cards
     updateLangCards(lang);
-
-    // ✅ NOVO: Atualiza o estado ativo dos links de idioma do rodapé
     updateFooterLangLinks(lang);
   }
 
@@ -268,6 +274,13 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTranslations(lang);
         dropdown.classList.remove('open');
         btn.setAttribute('aria-expanded', 'false');
+
+        // ── GA4: troca de idioma via navbar switcher ──
+        gaEvent('language_change', {
+          event_category: 'engajamento',
+          event_label: lang,
+          method: 'navbar_switcher'
+        });
       });
     });
   }
@@ -283,43 +296,51 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ✅ NOVA FUNÇÃO: Atualiza o estado ativo dos cards de idioma na seção #languages */
   function updateLangCards(lang) {
     document.querySelectorAll('.lang-card[data-lang]').forEach(card => {
       card.classList.toggle('active', card.dataset.lang === lang);
     });
   }
 
-  /* ✅ NOVA FUNÇÃO: Atualiza o estado ativo dos links de idioma do rodapé */
   function updateFooterLangLinks(lang) {
     document.querySelectorAll('.footer-lang-link[data-lang]').forEach(link => {
       link.classList.toggle('active', link.dataset.lang === lang);
     });
   }
 
-  /* ✅ NOVA FUNÇÃO: Inicializa os cliques nos lang-cards */
   function initLangCards() {
     document.querySelectorAll('.lang-card[data-lang]').forEach(card => {
-      // Clique com mouse
       card.addEventListener('click', () => {
         const lang = card.dataset.lang;
         saveLang(lang);
         applyTranslations(lang);
+
+        // ── GA4: troca de idioma via cards da seção #languages ──
+        gaEvent('language_change', {
+          event_category: 'engajamento',
+          event_label: lang,
+          method: 'section_card'
+        });
       });
 
-      // Suporte a teclado (Enter e Espaço) para acessibilidade
       card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           const lang = card.dataset.lang;
           saveLang(lang);
           applyTranslations(lang);
+
+          // ── GA4: troca de idioma via teclado ──
+          gaEvent('language_change', {
+            event_category: 'engajamento',
+            event_label: lang,
+            method: 'keyboard'
+          });
         }
       });
     });
   }
 
-  /* ✅ NOVA FUNÇÃO: Inicializa os cliques nos links de idioma do rodapé */
   function initFooterLangLinks() {
     document.querySelectorAll('.footer-lang-link[data-lang]').forEach(link => {
       link.addEventListener('click', (event) => {
@@ -327,6 +348,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const lang = link.dataset.lang;
         saveLang(lang);
         applyTranslations(lang);
+
+        // ── GA4: troca de idioma via footer ──
+        gaEvent('language_change', {
+          event_category: 'engajamento',
+          event_label: lang,
+          method: 'footer_link'
+        });
       });
     });
   }
@@ -364,6 +392,13 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTranslations(lang);
         overlay.classList.remove('visible');
         setTimeout(() => overlay.remove(), 400);
+
+        // ── GA4: seleção de idioma no modal de boas-vindas ──
+        gaEvent('language_change', {
+          event_category: 'engajamento',
+          event_label: lang,
+          method: 'welcome_modal'
+        });
       });
     });
   }
@@ -371,11 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ── INICIALIZAÇÃO do sistema de idiomas ── */
   function initI18n() {
     buildLangSwitcher();
-
-    // ✅ Inicializa os cliques nos cards de idioma
     initLangCards();
-
-    // ✅ Inicializa os cliques nos links de idioma do rodapé
     initFooterLangLinks();
 
     const saved = getSavedLang();
@@ -395,207 +426,192 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initI18n();
 
-/* ══════════════════════════════════════════════════════════════
-   VIDEO CAROUSEL
-══════════════════════════════════════════════════════════════ */
-/* ══════════════════════════════════════════════════════════════
-   VIDEO CAROUSEL — SUBSTITUIR a função initVideoCarousel()
-   no script.js pelo código abaixo
-══════════════════════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════════════════
+     GA4 — CLIQUES NO WHATSAPP
+     Cobre todos os botões/links do site de uma vez
+  ══════════════════════════════════════════════════════════ */
+  document.querySelectorAll('a[href*="whatsapp"]').forEach(el => {
+    el.addEventListener('click', () => {
+      // Identifica a origem do clique pela seção mais próxima
+      const section = el.closest('section, footer, nav, .mobile-cta-fixed');
+      const origin  = section ? (section.id || section.className.split(' ')[0]) : 'desconhecido';
 
-function initVideoCarousel() {
-  const track    = document.getElementById('vcTrack');
-  const dotsWrap = document.getElementById('vcDots');
-  const prevBtn  = document.getElementById('vcPrev');
-  const nextBtn  = document.getElementById('vcNext');
-  const viewport = document.getElementById('vcViewport');
-  if (!track) return;
-
-  let current = 0;
-  const total = VIDEOS.length;
-
-  /* ── Formata segundos em mm:ss ── */
-  function fmt(s) {
-    if (!s || isNaN(s)) return '0:00';
-    const m = Math.floor(s / 60);
-    const ss = Math.floor(s % 60).toString().padStart(2, '0');
-    return `${m}:${ss}`;
-  }
-
-  /* ── Cria cada slide ── */
-  VIDEOS.forEach((v, i) => {
-    const slide = document.createElement('div');
-    slide.className = 'vc-slide';
-    slide.innerHTML = `
-      <div class="vc-video-card">
-        <div class="vc-video-wrap" id="wrap-${i}">
-
-          <video
-            id="vid-${i}"
-            src="${v.src}"
-            playsinline
-            preload="metadata"
-          ></video>
-
-          <!-- Overlay com botão play/pause -->
-          <div class="vc-play-overlay" id="overlay-${i}">
-            <div class="vc-play-btn" id="playbtn-${i}">
-              <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
-            </div>
-          </div>
-
-          <!-- Barra de progresso customizada -->
-          <div class="vc-progress-bar">
-            <div class="vc-progress-track" id="track-${i}">
-              <div class="vc-progress-fill" id="fill-${i}"></div>
-            </div>
-            <span class="vc-time" id="time-${i}">0:00 / 0:00</span>
-          </div>
-
-          <div class="vc-counter">${i + 1} / ${total}</div>
-        </div>
-
-        <div class="vc-info">
-          <div class="vc-person">
-            <div class="vc-avatar">${v.initials}</div>
-            <div>
-              <div class="vc-name">${v.name}</div>
-              <div class="vc-detail">${v.detail}</div>
-            </div>
-          </div>
-          <div class="vc-badge">${v.badge}</div>
-        </div>
-      </div>`;
-    track.appendChild(slide);
-
-    /* ── Referências dos elementos deste slide ── */
-    const vid     = () => document.getElementById(`vid-${i}`);
-    const overlay = () => document.getElementById(`overlay-${i}`);
-    const wrap    = () => document.getElementById(`wrap-${i}`);
-    const fill    = () => document.getElementById(`fill-${i}`);
-    const timeEl  = () => document.getElementById(`time-${i}`);
-    const pbar    = () => document.getElementById(`track-${i}`);
-
-    /* ── Ícones SVG ── */
-    const iconPlay  = `<svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>`;
-    const iconPause = `<svg viewBox="0 0 24 24"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>`;
-
-    /* ── Toggle play/pause ao clicar no overlay ── */
-    setTimeout(() => {
-      const el   = vid();
-      const ov   = overlay();
-      const btn  = document.getElementById(`playbtn-${i}`);
-      const wp   = wrap();
-
-/* Clique no overlay toggling play/pause */
-      ov.addEventListener('click', () => {
-        if (el.paused) {
-          el.play();
-        } else {
-          el.pause();
-        }
+      gaEvent('whatsapp_click', {
+        event_category: 'conversao',
+        event_label: origin
       });
-
-      /* Clique direto no vídeo pausa/retoma */
-      el.addEventListener('click', () => {
-        if (el.paused) {
-          el.play();
-        } else {
-          el.pause();
-        }
-      });
-
-      /* Quando começa a tocar */
-      el.addEventListener('play', () => {
-        btn.innerHTML = iconPause;
-        ov.classList.add('hidden');
-        wp.classList.add('playing');
-      });
-
-      /* Quando pausa */
-      el.addEventListener('pause', () => {
-        btn.innerHTML = iconPlay;
-        ov.classList.remove('hidden');
-        wp.classList.remove('playing');
-      });
-
-      /* Quando termina */
-      el.addEventListener('ended', () => {
-        btn.innerHTML = iconPlay;
-        ov.classList.remove('hidden');
-        wp.classList.remove('playing');
-      });
-
-      /* Atualiza barra de progresso */
-      el.addEventListener('timeupdate', () => {
-        if (!el.duration) return;
-        const pct = (el.currentTime / el.duration) * 100;
-        fill().style.width = pct + '%';
-        timeEl().textContent = `${fmt(el.currentTime)} / ${fmt(el.duration)}`;
-      });
-
-      /* Clique na barra de progresso para seek */
-      pbar().addEventListener('click', (e) => {
-        if (!el.duration) return;
-        const rect = pbar().getBoundingClientRect();
-        const pct  = (e.clientX - rect.left) / rect.width;
-        el.currentTime = pct * el.duration;
-      });
-
-    }, 0);
+    });
   });
 
-  /* ── Dots ── */
-  VIDEOS.forEach((_, i) => {
-    const dot = document.createElement('button');
-    dot.className = 'vc-dot' + (i === 0 ? ' active' : '');
-    dot.setAttribute('aria-label', `Depoimento ${i + 1}`);
-    dot.addEventListener('click', () => goTo(i));
-    dotsWrap.appendChild(dot);
-  });
+  /* ══════════════════════════════════════════════════════════
+     VIDEO CAROUSEL
+  ══════════════════════════════════════════════════════════ */
+  function initVideoCarousel() {
+    const track    = document.getElementById('vcTrack');
+    const dotsWrap = document.getElementById('vcDots');
+    const prevBtn  = document.getElementById('vcPrev');
+    const nextBtn  = document.getElementById('vcNext');
+    const viewport = document.getElementById('vcViewport');
+    if (!track) return;
 
-  /* ── Navegar entre slides ── */
-  function goTo(index) {
-    /* Pausa todos os vídeos */
-    track.querySelectorAll('video').forEach(v => {
-      v.pause();
-      v.currentTime = 0;
-    });
+    let current = 0;
+    const total = VIDEOS.length;
 
-    current = index;
-    track.style.transform = `translateX(-${current * 100}%)`;
-
-    dotsWrap.querySelectorAll('.vc-dot').forEach((d, i) => {
-      d.classList.toggle('active', i === current);
-    });
-    prevBtn.disabled = current === 0;
-    nextBtn.disabled = current === total - 1;
-  }
-
-  prevBtn.addEventListener('click', () => { if (current > 0) goTo(current - 1); });
-  nextBtn.addEventListener('click', () => { if (current < total - 1) goTo(current + 1); });
-
-  /* ── Swipe touch ── */
-  let touchX = 0;
-  viewport.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
-  viewport.addEventListener('touchend', e => {
-    const diff = touchX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 48) {
-      if (diff > 0 && current < total - 1) goTo(current + 1);
-      else if (diff < 0 && current > 0) goTo(current - 1);
+    function fmt(s) {
+      if (!s || isNaN(s)) return '0:00';
+      const m = Math.floor(s / 60);
+      const ss = Math.floor(s % 60).toString().padStart(2, '0');
+      return `${m}:${ss}`;
     }
-  });
 
-  /* ── Teclado ── */
-  document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft'  && current > 0)         goTo(current - 1);
-    if (e.key === 'ArrowRight' && current < total - 1) goTo(current + 1);
-  });
+    VIDEOS.forEach((v, i) => {
+      const slide = document.createElement('div');
+      slide.className = 'vc-slide';
+      slide.innerHTML = `
+        <div class="vc-video-card">
+          <div class="vc-video-wrap" id="wrap-${i}">
 
-  goTo(0);
-}
+            <video
+              id="vid-${i}"
+              src="${v.src}"
+              playsinline
+              preload="metadata"
+            ></video>
 
-initVideoCarousel();
+            <div class="vc-play-overlay" id="overlay-${i}">
+              <div class="vc-play-btn" id="playbtn-${i}">
+                <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+              </div>
+            </div>
+
+            <div class="vc-progress-bar">
+              <div class="vc-progress-track" id="track-${i}">
+                <div class="vc-progress-fill" id="fill-${i}"></div>
+              </div>
+              <span class="vc-time" id="time-${i}">0:00 / 0:00</span>
+            </div>
+
+            <div class="vc-counter">${i + 1} / ${total}</div>
+          </div>
+
+          <div class="vc-info">
+            <div class="vc-person">
+              <div class="vc-avatar">${v.initials}</div>
+              <div>
+                <div class="vc-name">${v.name}</div>
+                <div class="vc-detail">${v.detail}</div>
+              </div>
+            </div>
+            <div class="vc-badge">${v.badge}</div>
+          </div>
+        </div>`;
+      track.appendChild(slide);
+
+      const vid     = () => document.getElementById(`vid-${i}`);
+      const overlay = () => document.getElementById(`overlay-${i}`);
+      const wrap    = () => document.getElementById(`wrap-${i}`);
+      const fill    = () => document.getElementById(`fill-${i}`);
+      const timeEl  = () => document.getElementById(`time-${i}`);
+      const pbar    = () => document.getElementById(`track-${i}`);
+
+      const iconPlay  = `<svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>`;
+      const iconPause = `<svg viewBox="0 0 24 24"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>`;
+
+      setTimeout(() => {
+        const el  = vid();
+        const ov  = overlay();
+        const btn = document.getElementById(`playbtn-${i}`);
+        const wp  = wrap();
+
+        ov.addEventListener('click', () => {
+          if (el.paused) { el.play(); } else { el.pause(); }
+        });
+
+        el.addEventListener('click', () => {
+          if (el.paused) { el.play(); } else { el.pause(); }
+        });
+
+        el.addEventListener('play', () => {
+          btn.innerHTML = iconPause;
+          ov.classList.add('hidden');
+          wp.classList.add('playing');
+        });
+
+        el.addEventListener('pause', () => {
+          btn.innerHTML = iconPlay;
+          ov.classList.remove('hidden');
+          wp.classList.remove('playing');
+        });
+
+        el.addEventListener('ended', () => {
+          btn.innerHTML = iconPlay;
+          ov.classList.remove('hidden');
+          wp.classList.remove('playing');
+        });
+
+        el.addEventListener('timeupdate', () => {
+          if (!el.duration) return;
+          const pct = (el.currentTime / el.duration) * 100;
+          fill().style.width = pct + '%';
+          timeEl().textContent = `${fmt(el.currentTime)} / ${fmt(el.duration)}`;
+        });
+
+        pbar().addEventListener('click', (e) => {
+          if (!el.duration) return;
+          const rect = pbar().getBoundingClientRect();
+          const pct  = (e.clientX - rect.left) / rect.width;
+          el.currentTime = pct * el.duration;
+        });
+
+      }, 0);
+    });
+
+    VIDEOS.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'vc-dot' + (i === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', `Depoimento ${i + 1}`);
+      dot.addEventListener('click', () => goTo(i));
+      dotsWrap.appendChild(dot);
+    });
+
+    function goTo(index) {
+      track.querySelectorAll('video').forEach(v => {
+        v.pause();
+        v.currentTime = 0;
+      });
+
+      current = index;
+      track.style.transform = `translateX(-${current * 100}%)`;
+
+      dotsWrap.querySelectorAll('.vc-dot').forEach((d, i) => {
+        d.classList.toggle('active', i === current);
+      });
+      prevBtn.disabled = current === 0;
+      nextBtn.disabled = current === total - 1;
+    }
+
+    prevBtn.addEventListener('click', () => { if (current > 0) goTo(current - 1); });
+    nextBtn.addEventListener('click', () => { if (current < total - 1) goTo(current + 1); });
+
+    let touchX = 0;
+    viewport.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+    viewport.addEventListener('touchend', e => {
+      const diff = touchX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 48) {
+        if (diff > 0 && current < total - 1) goTo(current + 1);
+        else if (diff < 0 && current > 0) goTo(current - 1);
+      }
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft'  && current > 0)         goTo(current - 1);
+      if (e.key === 'ArrowRight' && current < total - 1) goTo(current + 1);
+    });
+
+    goTo(0);
+  }
+
+  initVideoCarousel();
 
   /* ══════════════════════════════════════════════════════════
      SCROLL REVEAL
@@ -608,25 +624,49 @@ initVideoCarousel();
   }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
   reveals.forEach(el => revealObserver.observe(el));
 
+  /* ══════════════════════════════════════════════════════════
+     GA4 — VISUALIZAÇÃO DE SEÇÕES (dispara uma vez por seção)
+  ══════════════════════════════════════════════════════════ */
+  const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        gaEvent('section_view', {
+          event_category: 'scroll',
+          event_label: entry.target.id
+        });
+        sectionObserver.unobserve(entry.target); // dispara só uma vez
+      }
+    });
+  }, { threshold: 0.4 });
+
+  document.querySelectorAll('section[id]').forEach(s => sectionObserver.observe(s));
 
   /* ══════════════════════════════════════════════════════════
      FAQ ACCORDION
   ══════════════════════════════════════════════════════════ */
   document.querySelectorAll('.faq-question').forEach(btn => {
     btn.addEventListener('click', () => {
-      const item = btn.closest('.faq-item');
+      const item     = btn.closest('.faq-item');
       const isActive = item.classList.contains('active');
+
       document.querySelectorAll('.faq-item').forEach(i => {
         i.classList.remove('active');
         i.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
       });
+
       if (!isActive) {
         item.classList.add('active');
         btn.setAttribute('aria-expanded', 'true');
+
+        // ── GA4: abertura de pergunta do FAQ ──
+        const questionKey = btn.querySelector('[data-i18n]')?.dataset.i18n || 'faq_desconhecido';
+        gaEvent('faq_open', {
+          event_category: 'engajamento',
+          event_label: questionKey
+        });
       }
     });
   });
-
 
   /* ══════════════════════════════════════════════════════════
      NAVBAR — efeito ao rolar
@@ -641,7 +681,6 @@ initVideoCarousel();
       navbar.style.borderBottomColor = 'rgba(59, 130, 246, 0.10)';
     }
   });
-
 
   /* ══════════════════════════════════════════════════════════
      MENU MOBILE (hamburger)
@@ -661,7 +700,6 @@ initVideoCarousel();
       });
     });
   }
-
 
   /* ══════════════════════════════════════════════════════════
      SMOOTH SCROLL em âncoras
